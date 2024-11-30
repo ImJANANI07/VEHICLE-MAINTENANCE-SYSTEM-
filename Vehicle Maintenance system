@@ -1,0 +1,247 @@
+import java.awt.*;
+import java.awt.event.*;
+import java.util.ArrayList;
+
+public class VehicleMaintenanceSystem {
+
+    private Frame frame;
+    private Panel panel;
+    private TextArea maintenanceLogArea;
+    private Choice vehicleChoice;
+    private TextField maintenanceDateField;
+    private TextField nextServiceField;
+    private TextField descriptionField;
+    private Button addVehicleButton;
+    private Button scheduleMaintenanceButton;
+    private Button viewRecordsButton;
+
+    private ArrayList<Vehicle> vehicles;
+
+    public static void main(String[] args) {
+        EventQueue.invokeLater(() -> {
+            try {
+                VehicleMaintenanceSystem window = new VehicleMaintenanceSystem();
+                window.frame.setVisible(true);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    public VehicleMaintenanceSystem() {
+        vehicles = new ArrayList<>();
+        initialize();
+    }
+
+    private void initialize() {
+        frame = new Frame("Vehicle Maintenance System");
+        frame.setSize(600, 400);
+        frame.setLayout(new BorderLayout());
+        frame.addWindowListener(new WindowAdapter() {
+            public void windowClosing(WindowEvent we) {
+                System.exit(0);
+            }
+        });
+
+        // Set light theme background color and font
+        frame.setBackground(Color.decode("#F0F0F0"));
+        
+        panel = new Panel();
+        panel.setLayout(new GridLayout(0, 2));
+        panel.setBackground(Color.decode("#FFFFFF"));  // White background for the panel
+        frame.add(panel, BorderLayout.CENTER);
+
+        Font labelFont = new Font("Arial", Font.PLAIN, 14);
+        Color labelColor = Color.decode("#333333"); // Dark gray for labels
+
+        // Vehicle ComboBox (Choice in AWT)
+        Label vehicleLabel = new Label("Select Vehicle:");
+        vehicleLabel.setFont(labelFont);
+        vehicleLabel.setForeground(labelColor);
+        panel.add(vehicleLabel);
+        
+        vehicleChoice = new Choice();
+        panel.add(vehicleChoice);
+
+        // Maintenance Date
+        Label maintenanceDateLabel = new Label("Maintenance Date (YYYY-MM-DD):");
+        maintenanceDateLabel.setFont(labelFont);
+        maintenanceDateLabel.setForeground(labelColor);
+        panel.add(maintenanceDateLabel);
+        
+        maintenanceDateField = new TextField();
+        panel.add(maintenanceDateField);
+
+        // Next Service Date
+        Label nextServiceLabel = new Label("Next Service Date (YYYY-MM-DD):");
+        nextServiceLabel.setFont(labelFont);
+        nextServiceLabel.setForeground(labelColor);
+        panel.add(nextServiceLabel);
+        
+        nextServiceField = new TextField();
+        panel.add(nextServiceField);
+
+        // Description
+        Label descriptionLabel = new Label("Description of Maintenance:");
+        descriptionLabel.setFont(labelFont);
+        descriptionLabel.setForeground(labelColor);
+        panel.add(descriptionLabel);
+        
+        descriptionField = new TextField();
+        panel.add(descriptionField);
+
+        // Add Vehicle Button
+        addVehicleButton = new Button("Add Vehicle");
+        addVehicleButton.setBackground(Color.decode("#4CAF50"));  // Green button
+        addVehicleButton.setForeground(Color.WHITE);  // White text
+        addVehicleButton.setFont(new Font("Arial", Font.BOLD, 14));
+        addVehicleButton.addActionListener(e -> addVehicle());
+        panel.add(addVehicleButton);
+
+        // Schedule Maintenance Button
+        scheduleMaintenanceButton = new Button("Schedule Maintenance");
+        scheduleMaintenanceButton.setBackground(Color.decode("#2196F3"));  // Blue button
+        scheduleMaintenanceButton.setForeground(Color.WHITE);  // White text
+        scheduleMaintenanceButton.setFont(new Font("Arial", Font.BOLD, 14));
+        scheduleMaintenanceButton.addActionListener(e -> scheduleMaintenance());
+        panel.add(scheduleMaintenanceButton);
+
+        // View Records Button
+        viewRecordsButton = new Button("View Maintenance Records");
+        viewRecordsButton.setBackground(Color.decode("#FF9800"));  // Orange button
+        viewRecordsButton.setForeground(Color.WHITE);  // White text
+        viewRecordsButton.setFont(new Font("Arial", Font.BOLD, 14));
+        viewRecordsButton.addActionListener(e -> viewMaintenanceRecords());
+        panel.add(viewRecordsButton);
+
+        // Maintenance Log Area
+        maintenanceLogArea = new TextArea(10, 40);
+        maintenanceLogArea.setEditable(false);
+        maintenanceLogArea.setBackground(Color.decode("#F5F5F5"));  // Light gray background for the log area
+        maintenanceLogArea.setFont(new Font("Courier New", Font.PLAIN, 12));
+        frame.add(maintenanceLogArea, BorderLayout.SOUTH);
+    }
+
+    private void addVehicle() {
+        String vehicleName = TextFieldDialog("Enter Vehicle Name:");
+        if (vehicleName != null && !vehicleName.isEmpty()) {
+            Vehicle newVehicle = new Vehicle(vehicleName);
+            vehicles.add(newVehicle);
+            vehicleChoice.add(vehicleName);  // Add to the Choice component
+            showMessage("Vehicle added successfully!");
+        }
+    }
+
+    private void scheduleMaintenance() {
+        String vehicleName = vehicleChoice.getSelectedItem();
+        String maintenanceDate = maintenanceDateField.getText();
+        String nextServiceDate = nextServiceField.getText();
+        String description = descriptionField.getText();
+
+        if (vehicleName == null || maintenanceDate.isEmpty() || nextServiceDate.isEmpty() || description.isEmpty()) {
+            showMessage("Please fill in all fields.");
+            return;
+        }
+
+        Vehicle selectedVehicle = getVehicleByName(vehicleName);
+        if (selectedVehicle != null) {
+            selectedVehicle.scheduleMaintenance(maintenanceDate, nextServiceDate, description);
+            showMessage("Maintenance scheduled successfully!");
+        }
+    }
+
+    private void viewMaintenanceRecords() {
+        String vehicleName = vehicleChoice.getSelectedItem();
+        Vehicle selectedVehicle = getVehicleByName(vehicleName);
+
+        if (selectedVehicle != null) {
+            StringBuilder records = new StringBuilder("Maintenance Records for " + vehicleName + ":\n");
+            for (MaintenanceRecord record : selectedVehicle.getMaintenanceRecords()) {
+                records.append(record.toString()).append("\n");
+            }
+            maintenanceLogArea.setText(records.toString());
+        } else {
+            maintenanceLogArea.setText("No vehicle selected.");
+        }
+    }
+
+    private Vehicle getVehicleByName(String vehicleName) {
+        for (Vehicle vehicle : vehicles) {
+            if (vehicle.getName().equals(vehicleName)) {
+                return vehicle;
+            }
+        }
+        return null;
+    }
+
+    private String TextFieldDialog(String message) {
+        TextField inputField = new TextField();
+        Dialog dialog = new Dialog(frame, "Input", true);
+        dialog.setSize(300, 100);
+        dialog.setLayout(new FlowLayout());
+        dialog.add(new Label(message));
+        dialog.add(inputField);
+
+        Button okButton = new Button("OK");
+        okButton.addActionListener(e -> dialog.setVisible(false));
+        dialog.add(okButton);
+
+        dialog.setVisible(true);
+        return inputField.getText();
+    }
+
+    private void showMessage(String message) {
+        Dialog messageDialog = new Dialog(frame, "Message", true);
+        messageDialog.setSize(200, 100);
+        messageDialog.setLayout(new FlowLayout());
+        messageDialog.add(new Label(message));
+
+        Button okButton = new Button("OK");
+        okButton.addActionListener(e -> messageDialog.setVisible(false));
+        messageDialog.add(okButton);
+
+        messageDialog.setVisible(true);
+    }
+
+    // Vehicle class to store vehicle details
+    class Vehicle {
+        private String name;
+        private ArrayList<MaintenanceRecord> maintenanceRecords;
+
+        public Vehicle(String name) {
+            this.name = name;
+            this.maintenanceRecords = new ArrayList<>();
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public ArrayList<MaintenanceRecord> getMaintenanceRecords() {
+            return maintenanceRecords;
+        }
+
+        public void scheduleMaintenance(String maintenanceDate, String nextServiceDate, String description) {
+            MaintenanceRecord record = new MaintenanceRecord(maintenanceDate, nextServiceDate, description);
+            maintenanceRecords.add(record);
+        }
+    }
+
+    // MaintenanceRecord class to store maintenance details
+    class MaintenanceRecord {
+        private String maintenanceDate;
+        private String nextServiceDate;
+        private String description;
+
+        public MaintenanceRecord(String maintenanceDate, String nextServiceDate, String description) {
+            this.maintenanceDate = maintenanceDate;
+            this.nextServiceDate = nextServiceDate;
+            this.description = description;
+        }
+
+        @Override
+        public String toString() {
+            return "Maintenance Date: " + maintenanceDate + ", Next Service: " + nextServiceDate + ", Description: " + description;
+        }
+    }
+}
